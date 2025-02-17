@@ -1,22 +1,43 @@
-**VW Coin Algorithm**
+## VW Coin Algorithm
 
-Our algorithm dynamically evaluates each vehicle’s operational risk by combining *engine hours* (H), *distance traveled* (odometer), and *operational context* (urban, highway, off-road). Specifically:
+Our algorithm dynamically evaluates each vehicle’s operational risk by combining three main factors: engine hours, distance traveled (odometer), and operational context (e.g., urban, highway, off-road). Here’s how it works:
 
-1. **Risk Threshold:**  
-   We compute a risk threshold \(T(H)\) that decreases as engine hours increase, following  
-   \[
-   T(H) = \frac{R_{\max}}{1 + \gamma \cdot H},
-   \]  
-   where \(R_{\max}\) is the maximum distance allowed under ideal conditions, \(\gamma\) is a sensitivity parameter (in 1/h), and \(H\) is the total engine hours.
+1. **Risk Threshold Calculation**  
+   We compute a risk threshold `T(H)` that decreases as engine hours increase. The formula is:  
 
-2. **Risk Factor:**  
-   We then derive a *Risk Factor* that increases with both the accumulated distance and engine hours. This factor may be used to color-code each data point, making it easy to identify high‐risk vehicles (those operating for long hours and covering large distances).
+   ```
+   T(H) = R_max / (1 + gamma * H)
+   ```
 
-3. **Penalty (Optional):**  
-   For certain analyses, we calculate a penalty score using a multiplicative model of odometer and engine hours, such as  
-   \[
-   \text{Penalty} = 20 \times \Bigl(1 + \alpha \frac{\text{odometer}}{R_{\max}}\Bigr) \times \Bigl(1 + \beta \, h_{\text{ratio}}\Bigr),
-   \]  
-   where \(\alpha\) and \(\beta\) are coefficients that weight the impact of distance and engine hours, respectively.
+   - `R_max` is the maximum distance allowed under ideal conditions (e.g., 500 km).
+   - `gamma` is a sensitivity parameter (in 1/h) that controls how quickly the threshold decreases with increased engine hours.
+   - `H` is the total engine hours.  
+     
+   This means that if a vehicle has low engine hours (H is small), the full bonus capacity (`R_max`) is available. As H increases, the threshold declines, reflecting increased risk.
 
-In essence, the algorithm highlights vehicles or trips that pose higher risk (e.g., high engine hours, extensive mileage) and can optionally assign a penalty to them, making it straightforward to prioritize interventions or adjust operational strategies.
+2. **Risk Factor Derivation**  
+   The algorithm then derives a Risk Factor that combines the normalized odometer reading with engine hours. In practice, higher odometer values and higher engine hours lead to a higher risk factor, which can be used to visually color-code data points (for example, in a scatter plot) to identify high-risk vehicles quickly.
+
+3. **Penalty Calculation (Optional)**  
+   In addition to assessing risk, the algorithm can calculate a penalty score to deduct points for negative behavior. The penalty is calculated as follows:
+
+   ```
+   Penalty = 20 * (1 + alpha * (odometer / R_max)) * (1 + beta * h_ratio)
+   ```
+
+   - `20` is the base penalty (points).
+   - `odometer / R_max` normalizes the distance traveled.
+   - `h_ratio` is a normalized measure of engine hours (e.g., current engine hours divided by a reference value).
+   - `alpha` and `beta` are coefficients that determine how much each factor contributes to the penalty.
+
+   This multiplicative formula ensures that vehicles covering more distance and operating for longer hours incur higher penalties, thereby discouraging risky behavior.
+
+---
+
+**Summary:**  
+- The **threshold model** reduces bonus accumulation capacity with increased engine hours, using the formula `T(H) = R_max / (1 + gamma * H)`.
+- A **Risk Factor** is derived by combining normalized distance and engine hours, helping to visually identify high-risk vehicles.
+- An optional **penalty model** dynamically increases penalty points based on both odometer and engine hours:  
+  `Penalty = 20 * (1 + alpha * (odometer / R_max)) * (1 + beta * h_ratio)`.
+
+This approach ensures that incentives are risk-adjusted, and the output score is quantifiable and can be tokenized for use in modern blockchain-based incentive systems.
